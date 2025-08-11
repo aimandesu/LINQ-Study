@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using LINQTest.Extension;
 using LINQTest.LINQModel;
 using Microsoft.AspNetCore.Mvc;
@@ -184,5 +186,160 @@ public class EmployeeController : ControllerBase
         return Ok(results);
 
     }
+
+    [HttpGet("tutorial-4")]
+    //Sorting Operators = OrderBy, OrderByDescending, ThenBy, ThenByDescending
+    public IActionResult SortingOperator()
+    {
+        var employees = Data.GetEmployees();
+        var departments = Data.GetDepartments();
+
+        // Method Syntax
+        // var results = employees.Join(
+        //         departments,
+        //         employee => employee.DepartmentId,
+        //         department => department.Id,
+        //         (employee, department) => new
+        //         {
+        //             Id = employee.Id,
+        //             FirstName = employee.FirstName,
+        //             LastName = employee.LastName,
+        //             AnnualSalary = employee.AnnualSalary,
+        //             DepartmentId = employee.DepartmentId,
+        //             DepartmentName = department.LongName,
+        //         })
+        //     .OrderByDescending(employee => employee.DepartmentId) //OrderBy
+        //     .ThenBy(employee => employee.AnnualSalary); //ThenByDescending
+
+        var results = from emp in employees
+            join dept in departments
+                on emp.DepartmentId equals dept.Id
+            orderby emp.DepartmentId, emp.AnnualSalary descending
+            select new
+            {
+                Id = emp.Id,
+                FirstName = emp.FirstName,
+                LastName = emp.LastName,
+                AnnualSalary = emp.AnnualSalary,
+                DepartmentId = emp.DepartmentId,
+                DepartmentName = dept.LongName,
+            };
+        
+        return Ok(results);
+
+    }
+    
+    [HttpGet("tutorial-5")] //Query employee list and group result by department ID property 
+    //Grouping Operators = GroupBy, ToLookUp
+    public IActionResult GroupingOperator()
+    {
+        var employees = Data.GetEmployees();
+        var departments = Data.GetDepartments();
+        
+        //Method Syntax, deferred
+        // var results = employees.GroupBy(e => e.DepartmentId)
+        
+        //Query Syntax, deferred
+        // var results = from emp in employees
+        //     orderby emp.DepartmentId
+        //     group emp by emp.DepartmentId;
+
+        var results = employees
+            .OrderBy(o => o.DepartmentId)
+            .ToLookup(e => e.DepartmentId); // immediately 
+        
+        return Ok(results);
+        
+    }
+    
+    [HttpGet("tutorial-6")]
+    //Quantifier Operators = All, Any, Contains
+    public IActionResult QuantifierOperator()
+    {
+        var employees = Data.GetEmployees();
+
+        var annualSalaryCompare = 20000;
+        
+        bool isTrueAll = employees.All(emp => emp.AnnualSalary > annualSalaryCompare);
+        
+        bool isTrueAny = employees.Any(e => e.AnnualSalary > annualSalaryCompare);
+
+        var searchEmployee = new Employee
+        {
+            Id = 2,
+            FirstName = "Bob",
+            LastName = "Smith",
+            AnnualSalary = 50000m,
+            IsManager = false,
+            DepartmentId = 102
+        };
+        
+        bool containsEmployee = employees.Contains(searchEmployee, new EmployeeComparer());
+        
+        return Ok(isTrueAll);
+        
+
+    }
+    
+    [HttpGet("tutorial-7")]
+    //Filter Operators = OfType, Where
+    public IActionResult FilterOperator()
+    {
+        ArrayList arrayList = new ArrayList();
+        arrayList.Add(100);
+        arrayList.Add("2020");
+        
+        var intResult = from i in arrayList.OfType<int>() // can also be type 
+            select i;
+        
+        var stringResult = from i in arrayList.OfType<string>()
+            select i;
+        
+        return Ok(stringResult);
+        
+    }
+    
+    [HttpGet("tutorial-8")]
+    //Element Operators = ElementAt, ElementAtOrDefault, First, FirstOrDefault, Last, LastOrDefault, Single, SingleOrDefault
+    public IActionResult ElementOperator()
+    {
+        var employees = Data.GetEmployees();
+        var departments = Data.GetDepartments();
+
+        var emp = employees.ElementAt(1); //ElementAtOrDefault
+
+        return Ok(emp);
+    }
+ 
+    //to compare between class
+    public class EmployeeComparer : IEqualityComparer<Employee>
+    {
+        public bool Equals([AllowNull] Employee x, [AllowNull] Employee y)
+        {
+            if (x.Id == y.Id && x.FirstName == y.FirstName && x.LastName == y.LastName)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public int GetHashCode([DisallowNull] Employee obj)
+        {
+            return obj.Id.GetHashCode();
+        }
+        
+    }
+    
+    //IMPORTANT
+    //Equality Operator = SequenceEqual
+    //Concatenation Operator = Concat
+    //Set Operators = Distinct, Except, Intersect, Union
+    //Generation Operators = DefaultIfEmpty, Empty, Range, Union
+    //Aggregate Operators = Aggregate, Average, Count, Sum and Max
+    //Partitioning Operators = Skip, SkipWhile, Take and TakeWhile
+    //Conversion Operators = ToList, ToDictionary, and ToArray
+    //Projection Operators = Select, SelectMany
+    //Keywords = Let, Into
     
 }
